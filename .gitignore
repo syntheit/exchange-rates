@@ -1,0 +1,11 @@
+.direnv/
+
+.secrets
+.env
+
+main
+oracle
+*.exe
+*.test
+
+.DS_Store

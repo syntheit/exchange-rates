@@ -1,0 +1,23 @@
+name: Oracle Update
+on:
+  schedule:
+    - cron: "0 8 * * *" # 8:00 AM UTC daily
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Oracle
+        env:
+          EXCHANGE_KEY: ${{ env.EXCHANGE_KEY }}
+        run: |
+          go run main.go
+
+      - name: Commit Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Oracle update [skip ci]"
+          file_pattern: "rates.json"
