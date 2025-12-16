@@ -12,7 +12,7 @@ jobs:
 
       - name: Run Oracle
         env:
-          EXCHANGE_KEY: ${{ env.EXCHANGE_KEY }}
+          EXCHANGE_KEY: ${{ secrets.EXCHANGE_KEY }}
         run: |
           go run src/main.go
 
