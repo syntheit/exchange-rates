@@ -16,6 +16,15 @@ type DolarRate struct {
 	Venta  float64 `json:"venta"`
 }
 
+type BoliviaRate struct {
+	Compra             float64 `json:"compra"`
+	Venta              float64 `json:"venta"`
+	Casa               string  `json:"casa"`
+	Nombre             string  `json:"nombre"`
+	Moneda             string  `json:"moneda"`
+	FechaActualizacion string  `json:"fechaActualizacion"`
+}
+
 type WorldRates struct {
 	Result          string             `json:"result"`
 	ConversionRates map[string]float64 `json:"conversion_rates"`
@@ -62,6 +71,26 @@ func main() {
 		fmt.Println("MEP rate was 0, falling back to Blue rate")
 	}
 
+	// --- Step 1.5: Fetch Bolivia (Official and Blue) ---
+	fmt.Println("Fetching Bolivia DolarApi...")
+	boliviaBody := fetch("https://bo.dolarapi.com/v1/dolares")
+	var boliviaData []DolarRate
+	if err := json.Unmarshal(boliviaBody, &boliviaData); err != nil {
+		panic(err)
+	}
+
+	// Extract the specific rates we care about with "Expat Math" Logic
+	for _, rate := range boliviaData {
+		switch rate.Casa {
+		case "oficial":
+			// Official: Calculate the Midrate (Compra + Venta) / 2
+			ratesMap["BOB_OFFICIAL"] = (rate.Compra + rate.Venta) / 2
+		case "binance":
+			// Blue (Binance/Crypto): Use the Sell Rate (Venta) only since Compra is null
+			ratesMap["BOB_BLUE"] = rate.Venta
+		}
+	}
+
 	// --- Step 2: Fetch World (EUR, BRL, etc.) ---
 	fmt.Println("Fetching World Rates...")
 	apiKey := os.Getenv("EXCHANGE_KEY")
@@ -78,8 +107,9 @@ func main() {
 	// Start with the world rates
 	finalRates := worldData.ConversionRates
 
-	// Remove exchangerate-api's ARS rate
+	// Remove exchangerate-api's ARS and BOB rates
 	delete(finalRates, "ARS")
+	delete(finalRates, "BOB")
 
 	// Inject our custom Argentina rates
 	for key, value := range ratesMap {
