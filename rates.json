@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2025-12-26T08:27:05Z",
+  "updatedAt": "2025-12-26T19:07:35Z",
   "base": "USD",
   "rates": {
     "AED": 3.6725,
@@ -8,8 +8,8 @@
     "AMD": 381.2165,
     "ANG": 1.79,
     "AOA": 920.8975,
-    "ARS_BLUE": 1495,
-    "ARS_CRYPTO": 1537.8200000000002,
+    "ARS_BLUE": 1520,
+    "ARS_CRYPTO": 1526.565,
     "ARS_MEP": 1501.5,
     "ARS_OFFICIAL": 1450,
     "AUD": 1.4919,
@@ -23,7 +23,7 @@
     "BIF": 2961.8256,
     "BMD": 1,
     "BND": 1.284,
-    "BOB_BLUE": 9.5,
+    "BOB_BLUE": 9.54,
     "BOB_OFFICIAL": 6.91,
     "BRL": 5.5211,
     "BSD": 1,
