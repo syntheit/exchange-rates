@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -30,11 +31,17 @@ type WorldRates struct {
 	ConversionRates map[string]float64 `json:"conversion_rates"`
 }
 
+type BinancePrice struct {
+	Symbol string `json:"symbol"`
+	Price  string `json:"price"`
+}
+
 // 2. The Final Output Schema
-type OraclePayload struct {
-	UpdatedAt string             `json:"updatedAt"`
-	Base      string             `json:"base"`
-	Rates     map[string]float64 `json:"rates"`
+type RatesData struct {
+	UpdatedAt   string             `json:"updatedAt"`
+	Base        string             `json:"base"`
+	Rates       map[string]float64 `json:"rates"`
+	CryptoRates map[string]float64 `json:"cryptoRates"`
 }
 
 func main() {
@@ -103,9 +110,64 @@ func main() {
 		panic(err)
 	}
 
+	// --- Step 2.5: Fetch Crypto (Binance) ---
+	fmt.Println("Fetching Binance Crypto Rates...")
+	binanceBody := fetch("https://api.binance.com/api/v3/ticker/price")
+	var binanceData []BinancePrice
+	if err := json.Unmarshal(binanceBody, &binanceData); err != nil {
+		panic(err)
+	}
+
+	cryptoRates := make(map[string]float64)
+	targetSymbols := map[string]bool{
+		"BTCUSDT": true,
+		"ETHUSDT": true,
+		"BNBUSDT":  true,
+		"SOLUSDT":  true,
+		"XRPUSDT":  true,
+		"ADAUSDT":  true,
+		"AVAXUSDT": true,
+		"DOTUSDT":  true,
+		"LINKUSDT": true,
+		"NEARUSDT": true,
+		"APTUSDT":  true,
+		"SUIUSDT":  true,
+		"TONUSDT":  true,
+		"POLUSDT":  true,
+		"UNIUSDT":  true,
+		"AAVEUSDT": true,
+		"MKRUSDT":  true,
+		"INJUSDT":  true,
+		"RNDRUSDT": true,
+		"LTCUSDT": true,
+		"BCHUSDT": true,
+		"ETCUSDT": true,
+		"USDCUSDT":  true,
+		"DAIUSDT":   true,
+		"FDUSDUSDT": true,
+		"DOGEUSDT": true,
+		"SHIBUSDT": true,
+		"PEPEUSDT": true,
+		"WIFUSDT":  true,
+	}
+
+	for _, p := range binanceData {
+		if targetSymbols[p.Symbol] {
+			price, err := strconv.ParseFloat(p.Price, 64)
+			if err != nil {
+				continue
+			}
+			key := p.Symbol[:len(p.Symbol)-4] // Strip "USDT"
+			cryptoRates[key] = price
+		}
+	}
+
 	// --- Step 3: Merge & Overwrite ---
 	// Start with the world rates
 	finalRates := worldData.ConversionRates
+	if finalRates == nil {
+		finalRates = make(map[string]float64)
+	}
 
 	// Remove exchangerate-api's ARS and BOB rates
 	delete(finalRates, "ARS")
@@ -116,10 +178,11 @@ func main() {
 		finalRates[key] = value
 	}
 
-	payload := OraclePayload{
-		UpdatedAt: time.Now().UTC().Format(time.RFC3339),
-		Base:      "USD",
-		Rates:     finalRates,
+	payload := RatesData{
+		UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
+		Base:        "USD",
+		Rates:       finalRates,
+		CryptoRates: cryptoRates,
 	}
 
 	// --- Step 4: Save to Disk ---
