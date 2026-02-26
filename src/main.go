@@ -31,9 +31,11 @@ type WorldRates struct {
 	ConversionRates map[string]float64 `json:"conversion_rates"`
 }
 
-type BinancePrice struct {
-	Symbol string `json:"symbol"`
-	Price  string `json:"price"`
+type CoinCapResponse struct {
+	Data []struct {
+		Symbol   string `json:"symbol"`
+		PriceUsd string `json:"priceUsd"`
+	} `json:"data"`
 }
 
 // 2. The Final Output Schema
@@ -119,63 +121,61 @@ func main() {
 		panic(err)
 	}
 
-	// --- Step 2.5: Fetch Crypto (Binance) ---
-	fmt.Println("Fetching Binance Crypto Rates...")
+	// --- Step 2.5: Fetch Crypto (CoinCap) ---
+	fmt.Println("Fetching CoinCap Crypto Rates...")
 
 	cryptoRates := make(map[string]float64)
 	targetSymbols := map[string]bool{
-		"BTCUSDT":   true,
-		"ETHUSDT":   true,
-		"BNBUSDT":   true,
-		"SOLUSDT":   true,
-		"XRPUSDT":   true,
-		"ADAUSDT":   true,
-		"AVAXUSDT":  true,
-		"DOTUSDT":   true,
-		"LINKUSDT":  true,
-		"NEARUSDT":  true,
-		"APTUSDT":   true,
-		"SUIUSDT":   true,
-		"TONUSDT":   true,
-		"POLUSDT":   true,
-		"UNIUSDT":   true,
-		"AAVEUSDT":  true,
-		"MKRUSDT":   true,
-		"INJUSDT":   true,
-		"RNDRUSDT":  true,
-		"LTCUSDT":   true,
-		"BCHUSDT":   true,
-		"ETCUSDT":   true,
-		"USDCUSDT":  true,
-		"DAIUSDT":   true,
-		"FDUSDUSDT": true,
-		"DOGEUSDT":  true,
-		"SHIBUSDT":  true,
-		"PEPEUSDT":  true,
-		"WIFUSDT":   true,
+		"BTC":  true,
+		"ETH":  true,
+		"BNB":  true,
+		"SOL":  true,
+		"XRP":  true,
+		"ADA":  true,
+		"AVAX": true,
+		"DOT":  true,
+		"LINK": true,
+		"NEAR": true,
+		"APT":  true,
+		"SUI":  true,
+		"TON":  true,
+		"POL":  true,
+		"UNI":  true,
+		"AAVE": true,
+		"MKR":  true,
+		"INJ":  true,
+		"RNDR": true,
+		"LTC":  true,
+		"BCH":  true,
+		"ETC":  true,
+		"USDC": true,
+		"DAI":  true,
+		"FDUSD": true,
+		"DOGE": true,
+		"SHIB": true,
+		"PEPE": true,
+		"WIF":  true,
 	}
 
-	binanceBody, err := fetch("https://api.binance.com/api/v3/ticker/price")
+	coinCapBody, err := fetch("https://api.coincap.io/v2/assets?limit=500")
 	if err != nil {
-		fmt.Printf("Failed to fetch Binance rates: %v\n", err)
+		fmt.Printf("Failed to fetch CoinCap rates: %v\n", err)
 		// Don't panic here, just skip crypto if it fails
 	} else {
-		var binanceData []BinancePrice
-		if err := json.Unmarshal(binanceBody, &binanceData); err != nil {
-			fmt.Printf("Error unmarshaling Binance data: %v\n", err)
-			fmt.Printf("Response body: %s\n", string(binanceBody))
-			// If it's an object, it might be an error message from Binance
+		var coinCapData CoinCapResponse
+		if err := json.Unmarshal(coinCapBody, &coinCapData); err != nil {
+			fmt.Printf("Error unmarshaling CoinCap data: %v\n", err)
+			fmt.Printf("Response body: %s\n", string(coinCapBody))
 			panic(err)
 		}
 
-		for _, p := range binanceData {
+		for _, p := range coinCapData.Data {
 			if targetSymbols[p.Symbol] {
-				price, err := strconv.ParseFloat(p.Price, 64)
+				price, err := strconv.ParseFloat(p.PriceUsd, 64)
 				if err != nil {
 					continue
 				}
-				key := p.Symbol[:len(p.Symbol)-4] // Strip "USDT"
-				cryptoRates[key] = price
+				cryptoRates[p.Symbol] = price
 			}
 		}
 	}
