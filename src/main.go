@@ -47,7 +47,10 @@ type RatesData struct {
 func main() {
 	// --- Step 1: Fetch Argentina (Blue/MEP) ---
 	fmt.Println("Fetching DolarApi...")
-	arsBody := fetch("https://dolarapi.com/v1/dolares")
+	arsBody, err := fetch("https://dolarapi.com/v1/dolares")
+	if err != nil {
+		panic(err)
+	}
 	var arsData []DolarRate
 	if err := json.Unmarshal(arsBody, &arsData); err != nil {
 		panic(err)
@@ -80,7 +83,10 @@ func main() {
 
 	// --- Step 1.5: Fetch Bolivia (Official and Blue) ---
 	fmt.Println("Fetching Bolivia DolarApi...")
-	boliviaBody := fetch("https://bo.dolarapi.com/v1/dolares")
+	boliviaBody, err := fetch("https://bo.dolarapi.com/v1/dolares")
+	if err != nil {
+		panic(err)
+	}
 	var boliviaData []DolarRate
 	if err := json.Unmarshal(boliviaBody, &boliviaData); err != nil {
 		panic(err)
@@ -104,7 +110,10 @@ func main() {
 	if apiKey == "" {
 		panic("Missing EXCHANGE_KEY environment variable")
 	}
-	worldBody := fetch(fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/latest/USD", apiKey))
+	worldBody, err := fetch(fmt.Sprintf("https://v6.exchangerate-api.com/v6/%s/latest/USD", apiKey))
+	if err != nil {
+		panic(err)
+	}
 	var worldData WorldRates
 	if err := json.Unmarshal(worldBody, &worldData); err != nil {
 		panic(err)
@@ -112,53 +121,62 @@ func main() {
 
 	// --- Step 2.5: Fetch Crypto (Binance) ---
 	fmt.Println("Fetching Binance Crypto Rates...")
-	binanceBody := fetch("https://api.binance.com/api/v3/ticker/price")
-	var binanceData []BinancePrice
-	if err := json.Unmarshal(binanceBody, &binanceData); err != nil {
-		panic(err)
-	}
 
 	cryptoRates := make(map[string]float64)
 	targetSymbols := map[string]bool{
-		"BTCUSDT": true,
-		"ETHUSDT": true,
-		"BNBUSDT":  true,
-		"SOLUSDT":  true,
-		"XRPUSDT":  true,
-		"ADAUSDT":  true,
-		"AVAXUSDT": true,
-		"DOTUSDT":  true,
-		"LINKUSDT": true,
-		"NEARUSDT": true,
-		"APTUSDT":  true,
-		"SUIUSDT":  true,
-		"TONUSDT":  true,
-		"POLUSDT":  true,
-		"UNIUSDT":  true,
-		"AAVEUSDT": true,
-		"MKRUSDT":  true,
-		"INJUSDT":  true,
-		"RNDRUSDT": true,
-		"LTCUSDT": true,
-		"BCHUSDT": true,
-		"ETCUSDT": true,
+		"BTCUSDT":   true,
+		"ETHUSDT":   true,
+		"BNBUSDT":   true,
+		"SOLUSDT":   true,
+		"XRPUSDT":   true,
+		"ADAUSDT":   true,
+		"AVAXUSDT":  true,
+		"DOTUSDT":   true,
+		"LINKUSDT":  true,
+		"NEARUSDT":  true,
+		"APTUSDT":   true,
+		"SUIUSDT":   true,
+		"TONUSDT":   true,
+		"POLUSDT":   true,
+		"UNIUSDT":   true,
+		"AAVEUSDT":  true,
+		"MKRUSDT":   true,
+		"INJUSDT":   true,
+		"RNDRUSDT":  true,
+		"LTCUSDT":   true,
+		"BCHUSDT":   true,
+		"ETCUSDT":   true,
 		"USDCUSDT":  true,
 		"DAIUSDT":   true,
 		"FDUSDUSDT": true,
-		"DOGEUSDT": true,
-		"SHIBUSDT": true,
-		"PEPEUSDT": true,
-		"WIFUSDT":  true,
+		"DOGEUSDT":  true,
+		"SHIBUSDT":  true,
+		"PEPEUSDT":  true,
+		"WIFUSDT":   true,
 	}
 
-	for _, p := range binanceData {
-		if targetSymbols[p.Symbol] {
-			price, err := strconv.ParseFloat(p.Price, 64)
-			if err != nil {
-				continue
+	binanceBody, err := fetch("https://api.binance.com/api/v3/ticker/price")
+	if err != nil {
+		fmt.Printf("Failed to fetch Binance rates: %v\n", err)
+		// Don't panic here, just skip crypto if it fails
+	} else {
+		var binanceData []BinancePrice
+		if err := json.Unmarshal(binanceBody, &binanceData); err != nil {
+			fmt.Printf("Error unmarshaling Binance data: %v\n", err)
+			fmt.Printf("Response body: %s\n", string(binanceBody))
+			// If it's an object, it might be an error message from Binance
+			panic(err)
+		}
+
+		for _, p := range binanceData {
+			if targetSymbols[p.Symbol] {
+				price, err := strconv.ParseFloat(p.Price, 64)
+				if err != nil {
+					continue
+				}
+				key := p.Symbol[:len(p.Symbol)-4] // Strip "USDT"
+				cryptoRates[key] = price
 			}
-			key := p.Symbol[:len(p.Symbol)-4] // Strip "USDT"
-			cryptoRates[key] = price
 		}
 	}
 
@@ -193,12 +211,21 @@ func main() {
 }
 
 // Helper: HTTP GET
-func fetch(url string) []byte {
+func fetch(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	return body
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
