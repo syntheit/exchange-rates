@@ -121,23 +121,15 @@ func main() {
 		"DOTUSD":   "DOT",
 		"LINKUSD":  "LINK",
 		"NEARUSD":  "NEAR",
-		"APTUSD":   "APT",
 		"SUIUSD":   "SUI",
 		"TONUSD":   "TON",
 		"POLUSD":   "POL",
 		"UNIUSD":   "UNI",
-		"AAVEUSD":  "AAVE",
-		"INJUSD":   "INJ",
-		"RENDERUSD": "RNDR",
 		"XLTCZUSD": "LTC",
-		"BCHUSD":   "BCH",
-		"XETCZUSD": "ETC",
 		"USDCUSD":  "USDC",
+		"USDTZUSD": "USDT",
 		"DAIUSD":   "DAI",
 		"XDGUSD":   "DOGE",
-		"SHIBUSD":  "SHIB",
-		"PEPEUSD":  "PEPE",
-		"WIFUSD":   "WIF",
 	}
 
 	pairs := ""
@@ -194,7 +186,7 @@ func main() {
 	file, _ := json.MarshalIndent(payload, "", "  ")
 	_ = os.WriteFile("rates.json", file, 0644)
 
-	fmt.Println("Oracle Update Complete: rates.json saved.")
+	fmt.Println("Rates Refresh Complete: rates.json saved.")
 }
 
 func fetch(url string) ([]byte, error) {
