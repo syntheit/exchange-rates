@@ -1,5 +1,5 @@
 {
-  description = "Go dev shell for Exchange Rate Oracle";
+  description = "Go dev shell for Exchange Rate Fetcher";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -27,7 +27,7 @@
           ];
 
           shellHook = ''
-            echo "Exchange Rate Oracle (Go) shell ready."
+            echo "Exchange Rate Fetcher (Go) shell ready."
             echo "Go version: $(go version)"
           '';
         };

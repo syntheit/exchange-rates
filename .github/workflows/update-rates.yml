@@ -1,4 +1,4 @@
-name: Oracle Update
+name: Rates Refresh
 on:
   schedule:
     - cron: "0 8 * * *" # 8:00 AM UTC daily
@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Oracle
+      - name: Refresh Rates
         env:
           EXCHANGE_KEY: ${{ secrets.EXCHANGE_KEY }}
         run: |
@@ -22,5 +22,5 @@ jobs:
       - name: Commit Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Oracle update [skip ci]"
+          commit_message: "Rates refresh [skip ci]"
           file_pattern: "rates.json"
